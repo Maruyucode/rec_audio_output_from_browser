@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>createMediaStreamDestination() demo</title>
+</head>
+
+<body>
+    <h1>createMediaStreamDestination() demo</h1>
+
+    <audio id="kick" src="./trad_kick_01_C.wav"></audio>
+    <button id="kickbutton" data-playing="false" role="switch" aria-checked="false">KICK</button>
+
+    <p>Encoding a pure sine wave to an Opus file </p>
+    <button id="recbutton">Make sine wave</button>
+    <audio id="rec" controls></audio>
+
+    <script>
+        var button = document.getElementById("recbutton");
+        var kickButton = document.getElementById("kickbutton");
+        var clicked = false;
+        var chunks = [];
+
+        // var ac = new AudioContext();
+        // var osc = ac.createOscillator();
+        // var dest = ac.createMediaStreamDestination();
+        // var mediaRecorder = new MediaRecorder(dest.stream);
+        // osc.connect(dest);
+
+        const audioContext = new AudioContext();
+        const kickElm = document.getElementById("kick");
+        const kick = audioContext.createMediaElementSource(kickElm);
+        const dest = audioContext.createMediaStreamDestination();
+        const mediaRecorder = new MediaRecorder(dest.stream);
+        kick.connect(dest);
+
+        kick.connect(audioContext.destination);
+
+        kickButton.addEventListener("click", () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            kickElm.play();
+        })
+
+        button.addEventListener("click", function (e) {
+            if (!clicked) {
+                mediaRecorder.start();
+                // osc.start(0);
+                e.target.innerHTML = "Stop recording";
+                clicked = true;
+            } else {
+                mediaRecorder.stop();
+                // osc.stop(0);
+                e.target.disabled = true;
+            }
+        });
+
+        mediaRecorder.ondataavailable = function (evt) {
+            // push each chunk (blobs) in an array
+            chunks.push(evt.data);
+        };
+
+        mediaRecorder.onstop = function (evt) {
+            // Make blob out of our blobs, and open it.
+            var blob = new Blob(chunks, { 'type': 'audio/ogg; codecs=opus' });
+            document.querySelector("#rec").src = URL.createObjectURL(blob);
+        };
+    </script>
+</body>
+
+</html>
